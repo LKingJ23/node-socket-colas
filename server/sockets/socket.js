@@ -1,39 +1,46 @@
 const { io } = require('../server');
-const { TicketControl } = require('../classes/ticket-control');
+const { pool } = require('../database/database');
 
-const ticketControl = new TicketControl();
+pool.connect();
+/*
+pool.query('select * from rasa_logs;')
+    .then(response => {
+        console.log(response.rows);
+        pool.end();
+    })
+    .catch(err => {
+        pool.end()
+    })
+*/
 
 io.on('connection', (client) => {
 
-    client.on('siguienteTicket', (data, callback) => {
-        let siguiente = ticketControl.siguiente();
+    client.on('preguntaRespuesta', (data) => {
 
-        console.log(siguiente);
-        callback(siguiente);
-    });
+        //data[2] = data[2].replace(/['<b>']/g, '');
+        //data[2] = data[2].replace(/['</b>']/g, '');
 
-    // emitir un evento 'estadoActual'
-    client.emit('estadoActual', {
-        actual: ticketControl.getUltimoTicket(),
-        ultimos4: ticketControl.getUltimos4()
-    });
+        let date = new Date();
+        let dd = String(date.getDate()).padStart(2, '0');
+        let mm = String(date.getMonth() + 1).padStart(2, '0');
+        let yyyy = date.getFullYear();
 
-    client.on('atenderTicket', (data, callback) => {
-        if (!data.escritorio) {
-            return callback({
-                err: true,
-                mensaje: 'El escritorio es necesario'
-            });
-        }
+        today = mm + '/' + dd + '/' + yyyy;
 
-        let atenderTicket = ticketControl.atenderTicket(data.escritorio);
+        let hour = date.getHours();
+        let minutes = (date.getMinutes() < 10 ? '0' : '') + date.getMinutes();
+        let time = hour + ':' + minutes;
 
-        callback(atenderTicket);
+        console.log(data[0]);
+        console.log(data[1]);
+        console.log(data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9], data[10], data[11], data[12], data[13], data[14], data[15], data[16], data[17], data[18], data[19]);
+        console.log(today + ' ' + time);
+        let dateNow = today + ' ' + time;
+        console.log(data[20]);
 
-        // actualizar/notificar cambios en los ultimos 4
-        client.broadcast.emit('ultimos4', {
-            ultimos4: ticketControl.getUltimos4()
-        });
+        //pool.query("INSERT INTO rasa_logs(user_input, intent, entities, date_log, user_log) VALUES('" + data[0] + "', '" + data[1] + "', '" + data[2] + "', '" + dateNow + "', '" + data[3] + "');");
+        pool.query("INSERT INTO rasa_logs(user_input, intent, intent_percent, entity1, entity1_value, entity1_percent, entity2, entity2_value, entity2_percent, entity3, entity3_value, entity3_percent, entity4, entity4_value, entity4_percent, entity5, entity5_value, entity5_percent, entity6, entity6_value, entity6_percent, date_log, user_log)" +
+            "VALUES('" + data[0] + "', '" + data[1] + "', '" + data[2] + "', '" + data[3] + "', '" + data[4] + "', '" + data[5] + "', '" + data[6] + "', '" + data[7] + "', '" + data[8] + "', '" + data[9] + "', '" + data[10] + "', '" + data[11] + "', '" + data[12] + "', '" + data[13] + "', '" + data[14] + "', '" + data[15] + "', '" + data[16] + "', '" + data[17] + "', '" + data[18] + "', '" + data[19] + "', '" + data[20] + "', '" + dateNow + "', '" + data[3] + "');");
     });
 
 });
